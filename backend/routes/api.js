@@ -241,8 +241,8 @@ router.post('/documents', async (req, res) => {
         fs.writeFileSync(filePath, buffer);
         
         // Generate public URL
-        const protocol = req.protocol;
         const host = req.get('host');
+        const protocol = host.includes('localhost') ? 'http' : 'https';
         finalFileUrl = `${protocol}://${host}/uploads/${fileName}`;
       }
     }
