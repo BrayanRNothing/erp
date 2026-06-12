@@ -1,29 +1,34 @@
 import React, { useState } from 'react';
-import { ArrowRightLeft, CheckCircle2 } from 'lucide-react';
-
-const MOCK_CARDS = [
-  { id: '1', name: 'Cuenta Principal (*4092)' },
-  { id: '2', name: 'Tarjeta Crédito (*8812)' },
-  { id: '3', name: 'Caja Chica (Efectivo)' },
-];
+import { ArrowRightLeft, CheckCircle2, CreditCard } from 'lucide-react';
+import { useFinance } from '../../context/FinanceContext';
 
 export function Movements() {
+  const { cards, addMovement } = useFinance();
+  const activeCards = cards.filter(c => c.isActive !== false);
+
   const [formData, setFormData] = useState({
-    type: 'EXPENSE',
+    type: 'expense',
     amount: '',
     description: '',
-    cardId: ''
+    cardId: '',
+    category: 'General'
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.cardId) {
-      alert('Debes seleccionar una tarjeta obligatoriamente.');
+      alert('You must select a card or account.');
       return;
     }
-    console.log('Movimiento a registrar:', formData);
-    alert('Movimiento registrado en consola (mock)');
-    setFormData({ type: 'EXPENSE', amount: '', description: '', cardId: '' });
+    const result = addMovement({
+      ...formData,
+      amount: parseFloat(formData.amount),
+    });
+    if (result?.success === false) {
+      alert(result.error);
+      return;
+    }
+    setFormData({ type: 'expense', amount: '', description: '', cardId: '', category: 'General' });
   };
 
   return (
@@ -35,8 +40,8 @@ export function Movements() {
             <ArrowRightLeft className="w-6 h-6 text-indigo-300" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Registrar Movimiento</h2>
-            <p className="text-white/60 text-sm">Ingresos, compras o gastos operativos</p>
+            <h2 className="text-2xl font-bold text-white">Record Movement</h2>
+            <p className="text-white/60 text-sm">Income, purchases or operational expenses</p>
           </div>
         </div>
 
@@ -46,50 +51,59 @@ export function Movements() {
           <div className="grid grid-cols-2 gap-4">
             <button
               type="button"
-              onClick={() => setFormData({...formData, type: 'INCOME'})}
+              onClick={() => setFormData({...formData, type: 'income'})}
               className={`p-4 rounded-2xl border transition-all ${
-                formData.type === 'INCOME' 
+                formData.type === 'income' 
                 ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' 
                 : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'
               }`}
             >
-              + Ingreso
+              + Income
             </button>
             <button
               type="button"
-              onClick={() => setFormData({...formData, type: 'EXPENSE'})}
+              onClick={() => setFormData({...formData, type: 'expense'})}
               className={`p-4 rounded-2xl border transition-all ${
-                formData.type === 'EXPENSE' 
+                formData.type === 'expense' 
                 ? 'bg-rose-500/20 border-rose-500/50 text-rose-300' 
                 : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'
               }`}
             >
-              - Gasto / Compra
+              - Expense / Purchase
             </button>
           </div>
 
           {/* Tarjeta Destino/Origen */}
           <div>
             <label className="block text-sm font-medium text-white/80 mb-2">
-              Tarjeta / Cuenta asociada <span className="text-rose-400">*</span>
+              Card / Account <span className="text-rose-400">*</span>
             </label>
-            <select
-              required
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all [&>option]:bg-gray-800"
-              value={formData.cardId}
-              onChange={(e) => setFormData({...formData, cardId: e.target.value})}
-            >
-              <option value="" disabled>-- Selecciona una tarjeta --</option>
-              {MOCK_CARDS.map(card => (
-                <option key={card.id} value={card.id}>{card.name}</option>
-              ))}
-            </select>
+            {activeCards.length === 0 ? (
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/40 text-sm">
+                <CreditCard className="w-4 h-4" />
+                No cards available. Add one from the Finance section first.
+              </div>
+            ) : (
+              <select
+                required
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all [&>option]:bg-gray-800"
+                value={formData.cardId}
+                onChange={(e) => setFormData({...formData, cardId: e.target.value})}
+              >
+                <option value="" disabled>-- Select a card --</option>
+                {activeCards.map(card => (
+                  <option key={card.id} value={card.id}>
+                    {card.bank || card.name} {card.last4 ? `(*${card.last4})` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Monto y Descripción */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">Monto</label>
+              <label className="block text-sm font-medium text-white/80 mb-2">Amount</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">$</span>
                 <input
@@ -106,12 +120,12 @@ export function Movements() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">Descripción</label>
+              <label className="block text-sm font-medium text-white/80 mb-2">Description</label>
               <input
                 type="text"
                 required
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-                placeholder="Ej. Pago de internet"
+                placeholder="e.g. Internet payment"
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
               />
@@ -120,13 +134,15 @@ export function Movements() {
 
           <button
             type="submit"
-            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-4 rounded-xl shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 mt-4"
+            disabled={activeCards.length === 0}
+            className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-4 rounded-xl shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 mt-4"
           >
             <CheckCircle2 className="w-5 h-5" />
-            Registrar Movimiento
+            Record Movement
           </button>
         </form>
       </div>
     </div>
   );
 }
+

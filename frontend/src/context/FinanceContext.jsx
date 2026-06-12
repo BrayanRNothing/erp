@@ -3,49 +3,14 @@ import { useActivity, ACTIVITY_TYPES } from './ActivityContext';
 
 const FinanceContext = createContext(null);
 
-// Datos iniciales de prueba
-const initialCards = [
-  { id: '1', bank: 'Bank', type: 'Debit', currency: 'USD', balance: 0.00, color: 'from-slate-700 to-slate-900', isActive: true },
-];
-
-const initialMovements = [
-  { id: '1', cardId: '1', type: 'expense', amount: 450.00, description: 'Amazon Prime', date: '2026-06-08', category: 'Subscriptions' },
-  { id: '2', cardId: '3', type: 'income', amount: 1500.00, description: 'Freelance Payment', date: '2026-06-05', category: 'Income' },
-  { id: '3', cardId: '2', type: 'expense', amount: 85.00, description: 'Uber', date: '2026-06-09', category: 'Transportation' },
-];
-
-// Gastos Esperados Mensuales (Sustituye a "Budgets")
-const initialExpectedExpenses = [
-  { id: '1', description: 'Payroll Period 1', amount: 25000, expectedDate: '2026-06-15', category: 'Payroll', status: 'pending' },
-  { id: '2', description: 'Commercial Space Rent', amount: 12000, expectedDate: '2026-06-05', category: 'Operations', status: 'paid' },
-  { id: '3', description: 'Utilities (Power, Internet)', amount: 3500, expectedDate: '2026-06-20', category: 'Operations', status: 'pending' },
-  { id: '4', description: 'Subscriptions (AWS, GSuite)', amount: 1500, expectedDate: '2026-06-12', category: 'Technology', status: 'pending' },
-];
-
-const initialReceivables = [
-  { id: '1', description: 'Sales Bonus Client A', amount: 3500.00, expectedDate: '2026-06-15', status: 'pending' }
-];
-
-const initialPayables = [
-  { id: '1', description: 'Commercial Rent Payment', amount: 8000.00, expectedDate: '2026-06-20', status: 'pending' }
-];
-
-const initialClients = [
-  { id: '1', name: 'Acme Corp', email: 'contact@acme.com', phone: '555-1234', address: '123 Main Street', type: 'client' },
-  { id: '2', name: 'Global Distributors', email: 'sales@globaldist.com', phone: '555-9876', address: '742 Evergreen Terrace', type: 'provider' }
-];
-
-const initialDocuments = [
-  { id: '1', name: 'Contract_Office.pdf', type: 'application/pdf', category: 'Others', date: '2026-06-01', size: 1024500, url: null },
-  { id: '2', name: 'Gas_Receipt.jpg', type: 'image/jpeg', category: 'Receipt', date: '2026-06-09', size: 250000, url: null }
-];
-
-const initialBudgets = [
-  { id: '1', category: 'Subscriptions', limit: 2000, color: 'text-indigo-400' },
-  { id: '2', category: 'Operations', limit: 15000, color: 'text-amber-400' },
-  { id: '3', category: 'Transportation', limit: 3000, color: 'text-emerald-400' },
-  { id: '4', category: 'Technology', limit: 8000, color: 'text-sky-400' },
-];
+const initialCards = [];
+const initialMovements = [];
+const initialExpectedExpenses = [];
+const initialReceivables = [];
+const initialPayables = [];
+const initialClients = [];
+const initialDocuments = [];
+const initialBudgets = [];
 
 export function FinanceProvider({ children }) {
   const { logActivity } = useActivity();
