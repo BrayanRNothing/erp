@@ -11,7 +11,11 @@ import {
   ArrowRight,
   LogOut,
   Copy,
-  Crown 
+  Crown,
+  Edit2,
+  X,
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
