@@ -33,6 +33,7 @@ export function TeamSection() {
   const [companyName, setCompanyName] = useState('');
   const [companyLogo, setCompanyLogo] = useState('');
   const [teamCode, setTeamCode] = useState('');
+  const [owner, setOwner] = useState(null);
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +71,7 @@ export function TeamSection() {
         setCompanyName(data.companyName || '');
         setCompanyLogo(data.companyLogo || '');
         setTeamCode(data.teamCode || '');
+        setOwner(data.owner || null);
         setMembers(data.members || []);
       }
     } catch (err) {
@@ -417,8 +419,9 @@ export function TeamSection() {
                 </div>
             </div>
           </div>
+        </div>
 
-          <div className="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden">
             {/* MEMBERS GRID */}
             <div className="flex-1 flex flex-col overflow-y-auto pr-2 custom-scrollbar">
               <div className="flex items-center justify-between mb-4 mt-2">
