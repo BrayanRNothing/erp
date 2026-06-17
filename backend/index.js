@@ -18,11 +18,7 @@ app.set('trust proxy', true);
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-me';
 
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN || '*',
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
+app.use(cors()); // Allow all origins
 app.use(express.json({ limit: '50mb' }));
 
 // Ensure uploads directory exists

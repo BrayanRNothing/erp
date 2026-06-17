@@ -422,11 +422,18 @@ router.get('/team', async (req, res) => {
       select: { id: true, name: true, email: true, role: true, createdAt: true }
     });
 
+    // Fetch pending invitations
+    const invitations = await prisma.invitation.findMany({
+      where: { teamId: ownerId, status: 'PENDING' },
+      select: { id: true, token: true, status: true, createdAt: true }
+    });
+
     res.json({
       isOwner,
       companyName: owner.companyName,
       owner: { id: owner.id, name: owner.name, email: owner.email },
-      members
+      members,
+      invitations
     });
   } catch (error) { handleError(res, error); }
 });
@@ -445,30 +452,103 @@ router.put('/team', async (req, res) => {
   } catch (error) { handleError(res, error); }
 });
 
-router.post('/team/members', async (req, res) => {
+router.post('/team/invites', async (req, res) => {
   try {
     if (req.user.parentId) {
-      return res.status(403).json({ error: 'Solo el dueño puede agregar miembros.' });
+      return res.status(403).json({ error: 'Solo el dueño puede generar invitaciones.' });
     }
-    const { name, email, password } = req.body;
     
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      return res.status(400).json({ error: 'Email ya registrado.' });
+    // Generate a simple 6-character alphanumeric code
+    const token = Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    const invitation = await prisma.invitation.create({
+      data: {
+        token,
+        teamId: req.user.id
+      }
+    });
+    res.json(invitation);
+  } catch (error) { handleError(res, error); }
+});
+
+router.delete('/team/invites/:id', async (req, res) => {
+  try {
+    if (req.user.parentId) {
+      return res.status(403).json({ error: 'Solo el dueño puede revocar invitaciones.' });
+    }
+    
+    const invite = await prisma.invitation.findUnique({ where: { id: req.params.id } });
+    if (!invite || invite.teamId !== req.user.id) {
+      return res.status(404).json({ error: 'Invitación no encontrada.' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const member = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        parentId: req.user.id,
-        role: 'USER'
-      },
-      select: { id: true, name: true, email: true, role: true, createdAt: true }
+    await prisma.invitation.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (error) { handleError(res, error); }
+});
+
+router.post('/team/join', async (req, res) => {
+  try {
+    const { token } = req.body;
+    
+    // Si el usuario ya es dueño de un equipo o ya está en uno
+    if (req.user.companyName) {
+      return res.status(400).json({ error: 'Eres dueño de un equipo, no puedes unirte a otro.' });
+    }
+    
+    const invitation = await prisma.invitation.findUnique({ where: { token } });
+    if (!invitation || invitation.status !== 'PENDING') {
+      return res.status(400).json({ error: 'Código de invitación inválido o ya usado.' });
+    }
+
+    // Join team
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { parentId: invitation.teamId, role: 'USER' }
     });
-    res.json(member);
+
+    // Mark invitation as used (ACCEPTED)
+    await prisma.invitation.update({
+      where: { id: invitation.id },
+      data: { status: 'ACCEPTED' }
+    });
+
+    res.json({ success: true });
+  } catch (error) { handleError(res, error); }
+});
+
+router.post('/team/leave', async (req, res) => {
+  try {
+    if (!req.user.parentId) {
+      return res.status(400).json({ error: 'No estás en un equipo.' });
+    }
+    
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { parentId: null, role: 'USER' }
+    });
+    
+    res.json({ success: true });
+  } catch (error) { handleError(res, error); }
+});
+
+router.put('/team/members/:id', async (req, res) => {
+  try {
+    if (req.user.parentId) {
+      return res.status(403).json({ error: 'Solo el dueño puede editar miembros.' });
+    }
+    const { role } = req.body;
+    
+    const member = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!member || member.parentId !== req.user.id) {
+      return res.status(404).json({ error: 'Miembro no encontrado.' });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { role }
+    });
+    res.json(updated);
   } catch (error) { handleError(res, error); }
 });
 
@@ -484,7 +564,11 @@ router.delete('/team/members/:id', async (req, res) => {
       return res.status(404).json({ error: 'Miembro no encontrado.' });
     }
 
-    await prisma.user.delete({ where: { id: req.params.id } });
+    // Instead of deleting the user, we just kick them from the team
+    await prisma.user.update({ 
+      where: { id: req.params.id },
+      data: { parentId: null }
+    });
     res.json({ success: true });
   } catch (error) { handleError(res, error); }
 });

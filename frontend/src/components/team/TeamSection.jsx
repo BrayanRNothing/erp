@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, Users, Plus, Trash2, Mail, Save, AlertCircle, Info, Lock } from 'lucide-react';
+import { Building2, Users, Plus, Trash2, Save, AlertCircle, Info, Lock, Edit2, X, LogOut, Copy, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { getT } from '../../i18n/translations';
@@ -15,14 +15,21 @@ export function TeamSection() {
 
   const [isOwner, setIsOwner] = useState(false);
   const [companyName, setCompanyName] = useState('');
+  const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [members, setMembers] = useState([]);
+  const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Form state for new member
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newMember, setNewMember] = useState({ name: '', email: '', password: '' });
+  // States for No Team view
+  const [joinToken, setJoinToken] = useState('');
+  const [createCompanyName, setCreateCompanyName] = useState('');
+
+  // States for editing roles
+  const [editingMember, setEditingMember] = useState(null);
+
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [copiedToken, setCopiedToken] = useState(null);
 
   useEffect(() => {
     fetchTeam();
@@ -38,6 +45,7 @@ export function TeamSection() {
         setIsOwner(data.isOwner);
         setCompanyName(data.companyName || '');
         setMembers(data.members || []);
+        setInvitations(data.invitations || []);
       }
     } catch (err) {
       console.error(err);
@@ -46,7 +54,7 @@ export function TeamSection() {
     }
   };
 
-  const handleUpdateCompany = async () => {
+  const handleUpdateCompany = async (nameToUpdate = companyName) => {
     try {
       setError(''); setSuccess('');
       const res = await fetch(`${API_URL}/team`, {
@@ -55,12 +63,14 @@ export function TeamSection() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ companyName })
+        body: JSON.stringify({ companyName: nameToUpdate })
       });
       const data = await res.json();
       if (res.ok) {
-        setSuccess(tt.saved || 'Guardado exitosamente');
+        setSuccess('Empresa guardada');
         updateUser({ companyName: data.companyName });
+        setCompanyName(data.companyName);
+        setIsEditingCompany(false);
         setTimeout(() => setSuccess(''), 3000);
       } else {
         setError(data.error);
@@ -70,33 +80,99 @@ export function TeamSection() {
     }
   };
 
-  const handleAddMember = async (e) => {
+  const handleJoinTeam = async (e) => {
     e.preventDefault();
     try {
       setError(''); setSuccess('');
-      const res = await fetch(`${API_URL}/team/members`, {
+      const res = await fetch(`${API_URL}/team/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(newMember)
+        body: JSON.stringify({ token: joinToken })
+      });
+      if (res.ok) {
+        setSuccess('¡Te has unido al equipo!');
+        setTimeout(() => {
+          window.location.reload(); // Recargar para actualizar todo el contexto global
+        }, 1500);
+      } else {
+        const data = await res.json();
+        setError(data.error);
+      }
+    } catch (err) {
+      setError('Error al unirse al equipo');
+    }
+  };
+
+  const handleCreateTeam = async (e) => {
+    e.preventDefault();
+    await handleUpdateCompany(createCompanyName);
+  };
+
+  const handleLeaveTeam = async () => {
+    if (!confirm('¿Estás seguro de que quieres abandonar el equipo? Ya no podrás ver los datos.')) return;
+    try {
+      setError(''); setSuccess('');
+      const res = await fetch(`${API_URL}/team/leave`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setSuccess('Has abandonado el equipo');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        const data = await res.json();
+        setError(data.error);
+      }
+    } catch (err) {
+      setError('Error al salir');
+    }
+  };
+
+  const handleGenerateInvite = async () => {
+    try {
+      setError(''); setSuccess('');
+      const res = await fetch(`${API_URL}/team/invites`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
       if (res.ok) {
-        setMembers([...members, data]);
-        setShowAddForm(false);
-        setNewMember({ name: '', email: '', password: '' });
+        setInvitations([data, ...invitations]);
+        setSuccess('Invitación generada');
+        setTimeout(() => setSuccess(''), 3000);
       } else {
         setError(data.error);
       }
     } catch (err) {
-      setError('Error al crear miembro');
+      setError('Error al generar invitación');
+    }
+  };
+
+  const handleRevokeInvite = async (id) => {
+    if (!confirm('¿Estás seguro de revocar esta invitación?')) return;
+    try {
+      const res = await fetch(`${API_URL}/team/invites/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setInvitations(invitations.filter(i => i.id !== id));
+      } else {
+        const data = await res.json();
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const handleDeleteMember = async (id) => {
-    if (!confirm('¿Estás seguro de eliminar a este miembro?')) return;
+    if (!confirm('¿Estás seguro de eliminar a este miembro del equipo?')) return;
     try {
       const res = await fetch(`${API_URL}/team/members/${id}`, {
         method: 'DELETE',
@@ -113,187 +189,346 @@ export function TeamSection() {
     }
   };
 
+  const handleUpdateRole = async (id, newRole) => {
+    try {
+      const res = await fetch(`${API_URL}/team/members/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ role: newRole })
+      });
+      if (res.ok) {
+        setMembers(members.map(m => m.id === id ? { ...m, role: newRole } : m));
+        setEditingMember(null);
+        setSuccess('Rol actualizado exitosamente');
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        const data = await res.json();
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedToken(text);
+    setTimeout(() => setCopiedToken(null), 2000);
+  };
+
   if (loading) {
-    return <div className="h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>;
+    return <div className="h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600"></div></div>;
   }
 
+  // Determine if the user is in an active team
+  // A user has a team if they are NOT the owner (they joined one), OR if they are the owner and have set a companyName.
+  const hasTeam = !isOwner || (isOwner && companyName);
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* HEADER INFO */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex items-start gap-4 shadow-sm">
-        <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-          <Building2 size={24} />
-        </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-slate-800">{tt.title}</h3>
-          <p className="text-sm text-slate-500 mt-1">{tt.subtitle}</p>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm flex items-center gap-2 border border-red-100">
-          <AlertCircle size={16} /> {error}
-        </div>
-      )}
-      
-      {success && (
-        <div className="bg-emerald-50 text-emerald-600 p-4 rounded-xl text-sm flex items-center gap-2 border border-emerald-100">
-          <Info size={16} /> {success}
-        </div>
-      )}
-
-      {/* COMPAÑÍA */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <h4 className="text-base font-bold text-slate-800 mb-4">{tt.companyName}</h4>
-        
-        <div className="flex gap-4 items-center">
-          <input
-            type="text"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            disabled={!isOwner}
-            placeholder={tt.companyNamePlaceholder}
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-indigo-500 disabled:opacity-50"
-          />
-          {isOwner && (
-            <button
-              onClick={handleUpdateCompany}
-              className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2"
-            >
-              <Save size={16} /> {tt.saveCompany}
-            </button>
+    <div className="max-w-6xl mx-auto h-full flex flex-col gap-8 pb-8">
+      {/* Mensajes de feedback */}
+      {(error || success) && (
+        <div className="flex gap-4 shrink-0">
+          {error && (
+            <div className="flex-1 bg-red-50 text-red-600 p-4 rounded-2xl text-sm flex items-center gap-2 border border-red-100 shadow-sm">
+              <AlertCircle size={16} /> {error}
+            </div>
+          )}
+          {success && (
+            <div className="flex-1 bg-emerald-50 text-emerald-600 p-4 rounded-2xl text-sm flex items-center gap-2 border border-emerald-100 shadow-sm">
+              <Info size={16} /> {success}
+            </div>
           )}
         </div>
-        
-        {!isOwner && (
-          <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
-            <Lock size={12} /> {tt.childView}
-          </p>
-        )}
-      </div>
+      )}
 
-      {/* MIEMBROS */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <Users size={18} className="text-indigo-500" /> {tt.members}
-          </h4>
+      {!hasTeam ? (
+        // NO TEAM VIEW
+        <div className="flex-1 flex flex-col md:flex-row gap-8 items-center justify-center p-4">
           
-          {isOwner && !showAddForm && (
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="text-sm font-medium bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1.5"
-            >
-              <Plus size={16} /> {tt.addMember}
-            </button>
-          )}
+          {/* Join Team */}
+          <div className="flex-1 max-w-sm w-full bg-white rounded-2xl p-8 border border-slate-200 shadow-sm text-center flex flex-col items-center">
+            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-6">
+              <Users size={32} />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Unirse a un Equipo</h2>
+            <p className="text-sm text-slate-500 mb-6">Ingresa el código de invitación que te compartió tu administrador.</p>
+            
+            <form onSubmit={handleJoinTeam} className="w-full flex flex-col gap-4">
+              <input 
+                type="text" 
+                required
+                placeholder="Ej. ABX9L2"
+                value={joinToken}
+                onChange={e => setJoinToken(e.target.value.toUpperCase())}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 font-mono text-center tracking-widest text-lg"
+              />
+              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition-colors shadow-sm">
+                Unirse
+              </button>
+            </form>
+          </div>
+
+          <div className="text-slate-300 font-bold hidden md:block">O</div>
+
+          {/* Create Team */}
+          <div className="flex-1 max-w-sm w-full bg-white rounded-2xl p-8 border border-slate-200 shadow-sm text-center flex flex-col items-center">
+            <div className="w-16 h-16 bg-slate-50 text-slate-700 rounded-full flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
+              <Building2 size={32} />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Crear mi Empresa</h2>
+            <p className="text-sm text-slate-500 mb-6">Crea un espacio de trabajo propio para invitar a tu equipo y gestionar datos.</p>
+            
+            <form onSubmit={handleCreateTeam} className="w-full flex flex-col gap-4">
+              <input 
+                type="text" 
+                required
+                placeholder="Nombre de la empresa"
+                value={createCompanyName}
+                onChange={e => setCreateCompanyName(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:border-indigo-500 text-center"
+              />
+              <button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-3 rounded-xl transition-colors shadow-sm">
+                Crear Empresa
+              </button>
+            </form>
+          </div>
+
         </div>
+      ) : (
+        // HAS TEAM VIEW
+        <>
+          {/* TOP CARD: TEAM / COMPANY */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5 shrink-0">
+            
+            {/* Logo */}
+            <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-800 text-2xl font-bold shadow-sm shrink-0">
+              {companyName ? companyName.substring(0, 2).toUpperCase() : <Building2 size={32} className="text-slate-300" />}
+            </div>
 
-        {/* ADD MEMBER FORM */}
-        <AnimatePresence>
-          {showAddForm && (
-            <motion.form
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="bg-slate-50 p-5 rounded-xl border border-slate-200 mb-6 overflow-hidden"
-              onSubmit={handleAddMember}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* Info */}
+            <div className="flex-1 w-full text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-3 mb-1">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">{tt.memberName}</label>
-                  <input
-                    required
-                    type="text"
-                    value={newMember.name}
-                    onChange={e => setNewMember({ ...newMember, name: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">{tt.memberEmail}</label>
-                  <input
-                    required
-                    type="email"
-                    value={newMember.email}
-                    onChange={e => setNewMember({ ...newMember, email: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">{tt.memberPassword}</label>
-                  <input
-                    required
-                    type="password"
-                    value={newMember.password}
-                    onChange={e => setNewMember({ ...newMember, password: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800"
-                >
-                  {tt.cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                  {tt.add}
-                </button>
-              </div>
-            </motion.form>
-          )}
-        </AnimatePresence>
-
-        {/* MEMBERS LIST */}
-        <div className="space-y-3">
-          {members.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-6">{tt.ownerOnly || 'Sin miembros'}</p>
-          ) : (
-            members.map(m => (
-              <div key={m.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors group">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-700 shadow-sm">
-                    {m.name ? m.name.substring(0, 2).toUpperCase() : 'U'}
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-800 text-sm">{m.name || m.email}</p>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                      <Mail size={12} /> {m.email}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-6">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-xs font-medium text-slate-600 bg-slate-200/50 px-2.5 py-1 rounded-md inline-block">
-                      {m.role === 'ADMIN' ? 'Administrador' : tt.memberRole || 'Miembro'}
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">
-                      {tt.memberSince} {new Date(m.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{tt.title || 'Empresa'}</p>
                   
-                  {isOwner && (
-                    <button
-                      onClick={() => handleDeleteMember(m.id)}
-                      className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                      title={tt.delete}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                  {isEditingCompany ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="text"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        placeholder="Nombre de la empresa"
+                        className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-slate-800 font-bold text-lg focus:outline-none focus:border-indigo-500 w-full sm:w-64"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleUpdateCompany()}
+                        className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                      >
+                        <Save size={16} />
+                      </button>
+                      <button
+                        onClick={() => setIsEditingCompany(false)}
+                        className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center sm:justify-start gap-2 group">
+                      <h2 className="text-2xl font-bold text-slate-800">
+                        {companyName || 'Mi Empresa'}
+                      </h2>
+                      {isOwner && (
+                        <button
+                          onClick={() => setIsEditingCompany(true)}
+                          className="p-1.5 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
+                
+                {!isOwner ? (
+                  <button onClick={handleLeaveTeam} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg border border-red-100 text-xs font-medium transition-colors shadow-sm">
+                    <LogOut size={14} /> Salir del Equipo
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 rounded-md border border-emerald-100 text-xs font-bold text-emerald-600">
+                    <Lock size={12} /> Dueño
+                  </div>
+                )}
               </div>
-            ))
-          )}
-        </div>
-      </div>
+              
+              <p className="text-sm text-slate-500">Gestiona los miembros y accesos de tu espacio de trabajo.</p>
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden">
+            {/* MEMBERS GRID */}
+            <div className="flex-1 flex flex-col overflow-y-auto pr-2 custom-scrollbar">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-slate-800">Miembros Activos</h3>
+                  <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {members.length}
+                  </span>
+                </div>
+              </div>
+
+              {members.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl p-6 h-40">
+                  <Users size={32} className="mb-2 opacity-50 text-slate-500" />
+                  <p className="text-sm">Aún no hay miembros en el equipo</p>
+                </div>
+              ) : (
+                <motion.div 
+                  className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+                  initial="hidden" animate="show"
+                  variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } }}
+                >
+                  {members.map(m => (
+                    <motion.div 
+                      key={m.id}
+                      variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+                      className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
+                    >
+                      {/* Actions */}
+                      {isOwner && (
+                        <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => setEditingMember(m)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="Editar Rol"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          {m.role !== 'ADMIN' && (
+                            <button
+                              onClick={() => handleDeleteMember(m.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Expulsar"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex flex-col items-center text-center mb-4 mt-2">
+                        <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-lg font-bold shadow-sm mb-3">
+                          {m.name ? m.name.substring(0, 2).toUpperCase() : <Users size={20} className="text-slate-300" />}
+                        </div>
+                        <h4 className="font-bold text-slate-800 text-sm truncate w-full px-2">{m.name || 'Sin nombre'}</h4>
+                        <p className="text-xs text-slate-500 flex items-center justify-center gap-1.5 mt-0.5 w-full truncate px-2">
+                          <span className="truncate">{m.email}</span>
+                        </p>
+                      </div>
+
+                      <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
+                        {editingMember?.id === m.id ? (
+                          <div className="w-full flex items-center gap-2">
+                            <select 
+                              value={editingMember.role}
+                              onChange={(e) => setEditingMember({...editingMember, role: e.target.value})}
+                              className="flex-1 bg-slate-50 border border-slate-200 rounded text-[10px] p-1 font-bold"
+                            >
+                              <option value="USER">Miembro</option>
+                              <option value="ADMIN">Administrador</option>
+                            </select>
+                            <button onClick={() => handleUpdateRole(m.id, editingMember.role)} className="text-indigo-600 hover:text-indigo-700"><CheckCircle2 size={14} /></button>
+                            <button onClick={() => setEditingMember(null)} className="text-slate-400 hover:text-slate-600"><X size={14} /></button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${m.role === 'ADMIN' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+                              {m.role === 'ADMIN' ? 'Administrador' : 'Miembro'}
+                            </span>
+                            <span className="text-[10px] font-medium text-slate-400">
+                              {new Date(m.createdAt).toLocaleDateString()}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </div>
+
+            {/* INVITATIONS SIDEBAR */}
+            {isOwner && (
+              <div className="w-full lg:w-80 flex flex-col shrink-0">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <Mail size={18} className="text-indigo-600" /> Invitaciones
+                    </h3>
+                  </div>
+                  
+                  <button
+                    onClick={handleGenerateInvite}
+                    className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl transition-colors shadow-sm mb-6"
+                  >
+                    <Plus size={16} />
+                    <span className="font-medium text-sm">Generar Código</span>
+                  </button>
+
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-3">
+                    {invitations.length === 0 ? (
+                      <p className="text-xs text-slate-400 text-center py-4">No hay invitaciones pendientes</p>
+                    ) : (
+                      <AnimatePresence>
+                        {invitations.map(inv => (
+                          <motion.div 
+                            key={inv.id}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col gap-2 relative overflow-hidden"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                {new Date(inv.createdAt).toLocaleDateString()}
+                              </span>
+                              <button 
+                                onClick={() => handleRevokeInvite(inv.id)}
+                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                title="Revocar invitación"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <code className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-slate-800 font-mono text-sm text-center font-bold tracking-widest">
+                                {inv.token}
+                              </code>
+                              <button 
+                                onClick={() => copyToClipboard(inv.token)}
+                                className={`p-1.5 rounded-lg transition-colors border ${copiedToken === inv.token ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-white text-slate-500 hover:text-slate-700 border-slate-200 shadow-sm'}`}
+                                title="Copiar código"
+                              >
+                                {copiedToken === inv.token ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+                              </button>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

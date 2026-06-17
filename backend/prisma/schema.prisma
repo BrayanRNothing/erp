@@ -29,6 +29,7 @@ model User {
   expectedExpenses ExpectedExpense[]
   receivables Receivable[]
   payables Payable[]
+  invitations Invitation[] @relation("UserInvitations")
 }
 
 enum Role {
@@ -95,7 +96,7 @@ model Invoice {
   issueDate     DateTime        @default(now())
   
   userId        String
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   items         InvoiceItem[]
   
@@ -129,7 +130,7 @@ model Budget {
   color     String?  // CSS class name for color display
   
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -144,7 +145,7 @@ model Client {
   type      String   @default("client") // "client" o "provider"
   
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -224,4 +225,13 @@ model Payable {
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Invitation {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  teamId    String
+  status    String   @default("PENDING") // PENDING, ACCEPTED, REVOKED
+  createdAt DateTime @default(now())
+  creator   User     @relation("UserInvitations", fields: [teamId], references: [id], onDelete: Cascade)
 }
