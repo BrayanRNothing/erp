@@ -27,6 +27,8 @@ export function TeamSection() {
 
   // States for editing roles
   const [editingMember, setEditingMember] = useState(null);
+  const [isEditingMember, setIsEditingMember] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   // States for creating user
   const [newUserName, setNewUserName] = useState('');
@@ -159,12 +161,10 @@ export function TeamSection() {
       });
       const data = await res.json();
       if (res.ok) {
-        setMembers([data, ...members]);
-        setNewUserName('');
-        setNewUserEmail('');
-        setNewUserPassword('');
         setSuccess('Usuario creado exitosamente');
-        setTimeout(() => setSuccess(''), 3000);
+        setNewUserEmail(''); setNewUserName(''); setNewUserPassword('');
+        setShowAddUserModal(false);
+        fetchTeam();
       } else {
         setError(data.error);
       }
@@ -375,13 +375,28 @@ export function TeamSection() {
                   )}
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <button onClick={handleLeaveTeam} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg border border-red-100 text-xs font-medium transition-colors shadow-sm" title={isOwner ? "Eliminar equipo o transferir propiedad" : "Salir del Equipo"}>
-                    <LogOut size={14} /> {isOwner ? 'Eliminar / Salir' : 'Salir del Equipo'}
-                  </button>
-                  {isOwner && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 rounded-md border border-emerald-100 text-xs font-bold text-emerald-600">
-                      <Lock size={12} /> Dueño
+                <div className="flex flex-col items-end gap-3">
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleLeaveTeam} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg border border-red-100 text-xs font-medium transition-colors shadow-sm" title={isOwner ? "Eliminar equipo o transferir propiedad" : "Salir del Equipo"}>
+                      <LogOut size={14} /> {isOwner ? 'Eliminar / Salir' : 'Salir del Equipo'}
+                    </button>
+                    {isOwner && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 rounded-md border border-emerald-100 text-xs font-bold text-emerald-600">
+                        <Lock size={12} /> Dueño
+                      </div>
+                    )}
+                  </div>
+                  {isOwner && teamCode && !isEditingCompany && (
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 shadow-sm">
+                      <span className="text-xs text-slate-500 font-medium">Código:</span>
+                      <code className="text-slate-800 font-mono text-sm font-bold tracking-widest">{teamCode}</code>
+                      <button 
+                        onClick={() => copyToClipboard(teamCode)}
+                        className={`p-1.5 rounded-md transition-colors ${copiedToken === teamCode ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200'}`}
+                        title="Copiar código"
+                      >
+                        {copiedToken === teamCode ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -394,13 +409,21 @@ export function TeamSection() {
           <div className="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden">
             {/* MEMBERS GRID */}
             <div className="flex-1 flex flex-col overflow-y-auto pr-2 custom-scrollbar">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 mt-2">
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-slate-800">Usuarios</h3>
                   <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">
                     {members.length}
                   </span>
                 </div>
+                {isOwner && (
+                  <button 
+                    onClick={() => setShowAddUserModal(true)}
+                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                  >
+                    <Plus size={16} /> Añadir Usuario
+                  </button>
+                )}
               </div>
 
               {members.length === 0 ? (
@@ -483,84 +506,87 @@ export function TeamSection() {
               )}
             </div>
 
-            {/* SIDEBAR */}
-            {isOwner && (
-              <div className="w-full lg:w-80 flex flex-col shrink-0 gap-5">
-                {/* Team Code Card */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col">
-                  <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-3">
-                    <Lock size={18} className="text-indigo-600" /> Código del Equipo
-                  </h3>
-                  <p className="text-xs text-slate-500 mb-4">
-                    Comparte este ID fijo para que otros usuarios se unan a tu empresa desde su cuenta.
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-slate-800 font-mono text-lg text-center font-bold tracking-widest">
-                      {teamCode || '------'}
-                    </code>
-                    <button 
-                      onClick={() => copyToClipboard(teamCode)}
-                      className={`p-2.5 rounded-lg transition-colors border ${copiedToken === teamCode ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-white text-slate-500 hover:text-slate-700 border-slate-200 shadow-sm'}`}
-                      title="Copiar código"
-                    >
-                      {copiedToken === teamCode ? <CheckCircle2 size={20} /> : <Copy size={20} />}
-                    </button>
-                  </div>
-                </div>
 
-                {/* Create Member Form */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col">
-                  <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-3 text-sm">
-                    <Plus size={16} className="text-indigo-600" /> Crear usuario manual
-                  </h3>
-                  <form onSubmit={handleCreateMember} className="flex flex-col gap-2.5">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Nombre Completo</label>
-                      <input
-                        type="text"
-                        placeholder="Ej. Juan Pérez"
-                        value={newUserName}
-                        onChange={e => setNewUserName(e.target.value)}
-                        required
-                        className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800 font-medium"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Usuario</label>
-                      <input
-                        type="text"
-                        placeholder="Ej. juan123"
-                        value={newUserEmail}
-                        onChange={e => setNewUserEmail(e.target.value)}
-                        required
-                        className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800 font-medium"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Contraseña</label>
-                      <input
-                        type="password"
-                        placeholder="Mínimo 6 caracteres"
-                        value={newUserPassword}
-                        onChange={e => setNewUserPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800 font-medium"
-                      />
-                    </div>
-                    
-                    <button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-xl transition-colors shadow-sm mt-1 text-sm">
-                      Crear Usuario
-                    </button>
-                  </form>
-                </div>
-
-              </div>
-            )}
           </div>
         </>
+      )}
+
+      {/* ADD USER MODAL */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-sm overflow-hidden"
+          >
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <Plus size={18} className="text-indigo-600" /> Nuevo Usuario
+              </h3>
+              <button 
+                onClick={() => setShowAddUserModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="p-5">
+              <form onSubmit={handleCreateMember} className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Nombre Completo</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Juan Pérez"
+                    value={newUserName}
+                    onChange={e => setNewUserName(e.target.value)}
+                    required
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800 font-medium"
+                    autoFocus
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Usuario</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. juan123"
+                    value={newUserEmail}
+                    onChange={e => setNewUserEmail(e.target.value)}
+                    required
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Contraseña</label>
+                  <input
+                    type="password"
+                    placeholder="Mínimo 6 caracteres"
+                    value={newUserPassword}
+                    onChange={e => setNewUserPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800 font-medium"
+                  />
+                </div>
+                
+                <div className="flex gap-3 mt-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowAddUserModal(false)}
+                    className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-medium hover:bg-slate-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition-colors shadow-sm">
+                    Crear Usuario
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );
