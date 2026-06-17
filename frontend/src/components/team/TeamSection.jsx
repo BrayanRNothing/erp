@@ -510,37 +510,49 @@ export function TeamSection() {
 
                 {/* Create Member Form */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col">
-                  <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-5">
                     <Plus size={18} className="text-indigo-600" /> Crear usuario manual
                   </h3>
-                  <form onSubmit={handleCreateMember} className="flex flex-col gap-3">
-                    <input
-                      type="text"
-                      placeholder="Nombre del usuario"
-                      value={newUserName}
-                      onChange={e => setNewUserName(e.target.value)}
-                      required
-                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50"
-                    />
-                    <input
-                      type="email"
-                      placeholder="Correo electrónico"
-                      value={newUserEmail}
-                      onChange={e => setNewUserEmail(e.target.value)}
-                      required
-                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50"
-                    />
-                    <input
-                      type="password"
-                      placeholder="Contraseña"
-                      value={newUserPassword}
-                      onChange={e => setNewUserPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50"
-                    />
-                    <button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 rounded-xl transition-colors shadow-sm mt-1 text-sm">
-                      Añadir Usuario
+                  <form onSubmit={handleCreateMember} className="flex flex-col gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Nombre Completo</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Juan Pérez"
+                        value={newUserName}
+                        onChange={e => setNewUserName(e.target.value)}
+                        required
+                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800 font-medium"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Usuario</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. juan123"
+                        value={newUserEmail}
+                        onChange={e => setNewUserEmail(e.target.value)}
+                        required
+                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800 font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Contraseña</label>
+                      <input
+                        type="password"
+                        placeholder="Mínimo 6 caracteres"
+                        value={newUserPassword}
+                        onChange={e => setNewUserPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 text-slate-800 font-medium"
+                      />
+                    </div>
+                    
+                    <button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl transition-colors shadow-sm mt-2 text-sm">
+                      Crear Usuario
                     </button>
                   </form>
                 </div>
