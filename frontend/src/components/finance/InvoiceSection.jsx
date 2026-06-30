@@ -111,6 +111,9 @@ const infStyles = StyleSheet.create({
 });
 
 
+// --- FORMAT HELPER ---
+const formatCurrency = (amount) => Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 // --- STANDARD TEMPLATE COMPONENT ---
 const StandardTemplate = ({ data, subtotal, taxAmount, total }) => (
   <Page size="A4" style={stdStyles.page}>
@@ -157,8 +160,8 @@ const StandardTemplate = ({ data, subtotal, taxAmount, total }) => (
         <View key={index} style={stdStyles.tableRow}>
           <Text style={stdStyles.tdDesc}>{item.description || 'Item'}</Text>
           <Text style={stdStyles.tdQty}>{item.quantity}</Text>
-          <Text style={stdStyles.tdPrice}>${Number(item.price).toFixed(2)}</Text>
-          <Text style={stdStyles.tdTotal}>${(item.quantity * item.price).toFixed(2)}</Text>
+          <Text style={stdStyles.tdPrice}>${formatCurrency(item.price)}</Text>
+          <Text style={stdStyles.tdTotal}>${formatCurrency(item.quantity * item.price)}</Text>
         </View>
       ))}
     </View>
@@ -167,17 +170,17 @@ const StandardTemplate = ({ data, subtotal, taxAmount, total }) => (
       <View style={stdStyles.totalsBlock}>
         <View style={stdStyles.totalRow}>
           <Text style={stdStyles.totalLabel}>Subtotal:</Text>
-          <Text style={stdStyles.totalValue}>${subtotal.toFixed(2)}</Text>
+          <Text style={stdStyles.totalValue}>${formatCurrency(subtotal)}</Text>
         </View>
         {data.showTax && (
           <View style={stdStyles.totalRow}>
             <Text style={stdStyles.totalLabel}>Tax ({data.taxRate}%):</Text>
-            <Text style={stdStyles.totalValue}>${taxAmount.toFixed(2)}</Text>
+            <Text style={stdStyles.totalValue}>${formatCurrency(taxAmount)}</Text>
           </View>
         )}
         <View style={stdStyles.grandTotalRow}>
           <Text style={stdStyles.grandTotalLabel}>Total:</Text>
-          <Text style={stdStyles.grandTotalValue}>${total.toFixed(2)}</Text>
+          <Text style={stdStyles.grandTotalValue}>${formatCurrency(total)}</Text>
         </View>
       </View>
     </View>
@@ -208,7 +211,7 @@ const InfiniguardTemplate = ({ data, subtotal, taxAmount, total }) => {
           <Text style={infStyles.invNumber}># {data.invoiceNumber || '---'}</Text>
 
           <Text style={infStyles.balanceLabelTitle}>Balance Due</Text>
-          <Text style={infStyles.balanceAmountTitle}>${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+          <Text style={infStyles.balanceAmountTitle}>${formatCurrency(total)}</Text>
         </View>
       </View>
 
@@ -267,8 +270,8 @@ const InfiniguardTemplate = ({ data, subtotal, taxAmount, total }) => {
               <Text style={{ fontSize: 9, color: '#333', textAlign: 'right' }}>{Number(item.quantity).toFixed(2)}</Text>
               {item.unit && <Text style={{ fontSize: 8, color: '#666', marginTop: 2, textAlign: 'right' }}>{item.unit}</Text>}
             </View>
-            <Text style={infStyles.tdRate}>{Number(item.price).toFixed(2)}</Text>
-            <Text style={infStyles.tdAmount}>{(item.quantity * item.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+            <Text style={infStyles.tdRate}>{formatCurrency(item.price)}</Text>
+            <Text style={infStyles.tdAmount}>{formatCurrency(item.quantity * item.price)}</Text>
           </View>
         ))}
       </View>
@@ -277,21 +280,21 @@ const InfiniguardTemplate = ({ data, subtotal, taxAmount, total }) => {
         <View style={infStyles.totalsBlock}>
           <View style={infStyles.totalRow}>
             <Text style={infStyles.totalLabel}>Sub Total</Text>
-            <Text style={infStyles.totalValue}>{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+            <Text style={infStyles.totalValue}>{formatCurrency(subtotal)}</Text>
           </View>
           {data.showTax && (
             <View style={infStyles.totalRow}>
               <Text style={infStyles.totalLabel}>Tax ({data.taxRate}%)</Text>
-              <Text style={infStyles.totalValue}>{taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+              <Text style={infStyles.totalValue}>{formatCurrency(taxAmount)}</Text>
             </View>
           )}
           <View style={infStyles.totalRowBold}>
             <Text style={infStyles.totalLabelBold}>Total</Text>
-            <Text style={infStyles.totalValueBold}>${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+            <Text style={infStyles.totalValueBold}>${formatCurrency(total)}</Text>
           </View>
           <View style={infStyles.balanceRow}>
             <Text style={infStyles.totalLabelBold}>Balance Due</Text>
-            <Text style={infStyles.totalValueBold}>${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+            <Text style={infStyles.totalValueBold}>${formatCurrency(total)}</Text>
           </View>
         </View>
       </View>
@@ -796,7 +799,7 @@ export function InvoiceSection({ title }) {
                       </div>
                       <div className="w-full sm:w-auto text-right">
                         <span className="sm:hidden text-xs text-slate-500 font-medium mb-1 block">Total</span>
-                        <span className="text-slate-800 font-medium">${(item.quantity * item.price).toFixed(2)}</span>
+                        <span className="text-slate-800 font-medium">${formatCurrency(item.quantity * item.price)}</span>
                       </div>
                       <div className="w-full sm:w-auto flex justify-end">
                         <button
@@ -849,18 +852,18 @@ export function InvoiceSection({ title }) {
                   <div className="space-y-3">
                     <div className="flex justify-between text-slate-600 text-sm font-medium">
                       <span>Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                      <span>${formatCurrency(subtotal)}</span>
                     </div>
                     {invoiceData.showTax && (
                       <div className="flex justify-between text-slate-600 text-sm font-medium">
                         <span>Tax ({invoiceData.taxRate}%)</span>
-                        <span>${taxAmountUI.toFixed(2)}</span>
+                        <span>${formatCurrency(taxAmountUI)}</span>
                       </div>
                     )}
                     <div className="h-px w-full bg-indigo-200 my-2" />
                     <div className="flex justify-between text-slate-900 text-xl font-bold">
                       <span>Total</span>
-                      <span className="text-indigo-600">${total.toFixed(2)}</span>
+                      <span className="text-indigo-600">${formatCurrency(total)}</span>
                     </div>
                   </div>
 
