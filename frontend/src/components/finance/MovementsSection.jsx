@@ -75,8 +75,8 @@ export function MovementsSection() {
       <button
         onClick={handleClick}
         className={`
-          relative flex flex-col items-start p-5 rounded-3xl overflow-hidden transition-all duration-300 text-left group
-          border bg-white shadow-sm
+          relative flex flex-col items-start p-4 lg:p-5 rounded-[1.5rem] overflow-hidden transition-all duration-300 text-left group
+          border bg-white shadow-sm min-h-[140px] shrink-0
           ${colSpan === 2 ? 'col-span-2' : 'col-span-1'}
           ${isActive 
             ? `${colorClasses[color]} scale-[0.98] ring-1 ring-${color}-200 shadow-md` 
@@ -85,20 +85,20 @@ export function MovementsSection() {
         `}
       >
         <div className={`
-          p-3 rounded-2xl mb-4 transition-colors duration-300
+          p-2.5 lg:p-3 rounded-2xl mb-3 lg:mb-4 transition-colors duration-300 shrink-0
           ${isActive ? 'bg-white/50' : 'bg-slate-100 group-hover:bg-slate-200'}
           ${isActive ? iconColors[color] : 'text-slate-500'}
         `}>
-          <Icon size={24} />
+          <Icon size={22} className="lg:w-6 lg:h-6" />
         </div>
-        <h3 className={`font-bold mb-1 ${isActive ? 'text-slate-900' : 'text-slate-800'}`}>{title}</h3>
-        <p className={`text-xs ${isActive ? 'text-slate-600' : 'text-slate-500'}`}>{desc}</p>
+        <h3 className={`font-bold mb-1 text-sm lg:text-base leading-tight ${isActive ? 'text-slate-900' : 'text-slate-800'}`}>{title}</h3>
+        <p className={`text-[11px] lg:text-xs leading-snug ${isActive ? 'text-slate-600' : 'text-slate-500'}`}>{desc}</p>
       </button>
     );
   };
 
   return (
-    <div className="h-full flex flex-col gap-6 overflow-hidden">
+    <div className="h-full flex flex-col gap-6 overflow-y-auto lg:overflow-hidden custom-scrollbar pb-6 lg:pb-0">
       
       {/* TOP SECTION: Carousel & Actions */}
       <div className="shrink-0 flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10 lg:px-8">
@@ -176,19 +176,25 @@ export function MovementsSection() {
         </div>
 
         {/* Action Buttons to the Right */}
-        <div className="flex flex-col justify-center flex-1 lg:pl-4 mb-4 lg:mb-0">
+        <div className="flex flex-col justify-center flex-1 lg:pl-4 mt-6 lg:mt-0 mb-2 lg:mb-0">
           <div className="flex gap-6 justify-center">
-            <button onClick={() => setTransactionModal({ isOpen: true, type: 'income' })} className="group relative w-14 h-14 rounded-full bg-white border border-emerald-200 text-emerald-600 flex items-center justify-center hover:bg-emerald-50 transition-all hover:scale-110 shadow-sm">
-              <Download size={24} />
-              <span className="absolute -bottom-6 text-[10px] font-medium text-slate-500 group-hover:text-emerald-600 whitespace-nowrap transition-colors">Deposit</span>
+            <button onClick={() => setTransactionModal({ isOpen: true, type: 'income' })} className="group flex flex-col items-center gap-1.5">
+              <div className="w-14 h-14 rounded-full bg-white border border-emerald-200 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-50 transition-all group-hover:scale-110 shadow-sm">
+                <Download size={24} />
+              </div>
+              <span className="text-[10px] font-medium text-slate-500 group-hover:text-emerald-600 whitespace-nowrap transition-colors">Deposit</span>
             </button>
-            <button onClick={() => setTransferModal(true)} className="group relative w-14 h-14 rounded-full bg-white border border-blue-200 text-blue-600 flex items-center justify-center hover:bg-blue-50 transition-all hover:scale-110 shadow-sm">
-              <ArrowLeftRight size={24} />
-              <span className="absolute -bottom-6 text-[10px] font-medium text-slate-500 group-hover:text-blue-600 whitespace-nowrap transition-colors">Transfer</span>
+            <button onClick={() => setTransferModal(true)} className="group flex flex-col items-center gap-1.5">
+              <div className="w-14 h-14 rounded-full bg-white border border-blue-200 text-blue-600 flex items-center justify-center group-hover:bg-blue-50 transition-all group-hover:scale-110 shadow-sm">
+                <ArrowLeftRight size={24} />
+              </div>
+              <span className="text-[10px] font-medium text-slate-500 group-hover:text-blue-600 whitespace-nowrap transition-colors">Transfer</span>
             </button>
-            <button onClick={() => setTransactionModal({ isOpen: true, type: 'expense' })} className="group relative w-14 h-14 rounded-full bg-white border border-indigo-200 text-indigo-600 flex items-center justify-center hover:bg-indigo-50 transition-all hover:scale-110 shadow-sm">
-              <Send size={24} />
-              <span className="absolute -bottom-6 text-[10px] font-medium text-slate-500 group-hover:text-indigo-600 whitespace-nowrap transition-colors">Withdraw</span>
+            <button onClick={() => setTransactionModal({ isOpen: true, type: 'expense' })} className="group flex flex-col items-center gap-1.5">
+              <div className="w-14 h-14 rounded-full bg-white border border-indigo-200 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-50 transition-all group-hover:scale-110 shadow-sm">
+                <Send size={24} />
+              </div>
+              <span className="text-[10px] font-medium text-slate-500 group-hover:text-indigo-600 whitespace-nowrap transition-colors">Withdraw</span>
             </button>
           </div>
         </div>

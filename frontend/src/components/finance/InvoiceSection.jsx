@@ -169,10 +169,12 @@ const StandardTemplate = ({ data, subtotal, taxAmount, total }) => (
           <Text style={stdStyles.totalLabel}>Subtotal:</Text>
           <Text style={stdStyles.totalValue}>${subtotal.toFixed(2)}</Text>
         </View>
-        <View style={stdStyles.totalRow}>
-          <Text style={stdStyles.totalLabel}>Tax ({data.taxRate}%):</Text>
-          <Text style={stdStyles.totalValue}>${taxAmount.toFixed(2)}</Text>
-        </View>
+        {data.showTax && (
+          <View style={stdStyles.totalRow}>
+            <Text style={stdStyles.totalLabel}>Tax ({data.taxRate}%):</Text>
+            <Text style={stdStyles.totalValue}>${taxAmount.toFixed(2)}</Text>
+          </View>
+        )}
         <View style={stdStyles.grandTotalRow}>
           <Text style={stdStyles.grandTotalLabel}>Total:</Text>
           <Text style={stdStyles.grandTotalValue}>${total.toFixed(2)}</Text>
@@ -277,7 +279,7 @@ const InfiniguardTemplate = ({ data, subtotal, taxAmount, total }) => {
             <Text style={infStyles.totalLabel}>Sub Total</Text>
             <Text style={infStyles.totalValue}>{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
           </View>
-          {taxAmount > 0 && (
+          {data.showTax && (
             <View style={infStyles.totalRow}>
               <Text style={infStyles.totalLabel}>Tax ({data.taxRate}%)</Text>
               <Text style={infStyles.totalValue}>{taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
@@ -322,7 +324,7 @@ const InfiniguardTemplate = ({ data, subtotal, taxAmount, total }) => {
 // --- MAIN WRAPPER COMPONENT ---
 const InvoiceDocument = ({ data }) => {
   const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-  const taxAmount = subtotal * (data.taxRate / 100);
+  const taxAmount = data.showTax ? subtotal * (data.taxRate / 100) : 0;
   const total = subtotal + taxAmount;
 
   return (
@@ -366,6 +368,7 @@ export function InvoiceSection({ title }) {
     shipToName: '',
     shipToAddress: '',
     taxRate: 0,
+    showTax: false,
     notes: '',
     bankDetails: '',
     items: [
@@ -428,6 +431,7 @@ export function InvoiceSection({ title }) {
       shipToName: '',
       shipToAddress: '',
       taxRate: 0,
+      showTax: false,
       notes: '',
       bankDetails: '',
       items: [
@@ -460,6 +464,7 @@ export function InvoiceSection({ title }) {
       shipToName: '',
       shipToAddress: '',
       taxRate: 0,
+      showTax: false,
       items: [
         { description: '', quantity: 1, price: 0, unit: '' },
       ]
@@ -490,13 +495,15 @@ export function InvoiceSection({ title }) {
       shipToName: '',
       shipToAddress: '',
       taxRate: 0,
+      showTax: false,
       items: [
         { description: '', quantity: 1, price: 0, unit: '' },
       ]
     }));
   };
   const subtotal = invoiceData.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-  const total = subtotal + (subtotal * (invoiceData.taxRate / 100));
+  const taxAmountUI = invoiceData.showTax ? subtotal * (invoiceData.taxRate / 100) : 0;
+  const total = subtotal + taxAmountUI;
 
   const handleCreateInvoice = async () => {
     setIsCreating(true);
@@ -815,11 +822,21 @@ export function InvoiceSection({ title }) {
               {/* FOOTER & TOTALS */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
                 <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col gap-4">
-                  <div className="flex gap-4">
+                  <div className="flex gap-4 items-end">
                     <div className="flex-1">
                       <InputField label="Tax (%)" type="number" value={invoiceData.taxRate} onChange={(e) => handleInputChange('taxRate', Number(e.target.value))} />
                     </div>
-                    <div className="flex-1"></div>
+                    <div className="flex-1 mb-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={invoiceData.showTax} 
+                          onChange={(e) => handleInputChange('showTax', e.target.checked)}
+                          className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-slate-700 font-medium">Include Tax</span>
+                      </label>
+                    </div>
                   </div>
                   <InputField label="Additional Notes" value={invoiceData.notes} onChange={(e) => handleInputChange('notes', e.target.value)} multiline rows={3} placeholder="Payment instructions..." />
 
@@ -834,10 +851,10 @@ export function InvoiceSection({ title }) {
                       <span>Subtotal</span>
                       <span>${subtotal.toFixed(2)}</span>
                     </div>
-                    {invoiceData.taxRate > 0 && (
+                    {invoiceData.showTax && (
                       <div className="flex justify-between text-slate-600 text-sm font-medium">
                         <span>Tax ({invoiceData.taxRate}%)</span>
-                        <span>${(subtotal * (invoiceData.taxRate / 100)).toFixed(2)}</span>
+                        <span>${taxAmountUI.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="h-px w-full bg-indigo-200 my-2" />

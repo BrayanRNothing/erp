@@ -198,10 +198,10 @@ export function BentoLayout() {
   const avatar = user?.name ? user.name.substring(0, 2).toUpperCase() : 'U';
 
   return (
-    <div className="h-screen w-full flex overflow-hidden p-6 gap-6">
+    <div className="h-screen w-full flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden p-4 lg:p-6 gap-4 lg:gap-6 bg-slate-50 lg:bg-transparent custom-scrollbar">
 
       {/* ── SIDEBAR IZQUIERDO ── */}
-      <div className="w-72 flex flex-col gap-4 shrink-0 h-full">
+      <div className="w-full lg:w-72 flex flex-col gap-4 shrink-0 lg:h-full">
 
         {/* Perfil */}
         <Card className="p-5 shrink-0" id="tour-profile">
@@ -309,7 +309,7 @@ export function BentoLayout() {
       </div>
 
       {/* ── ÁREA PRINCIPAL DERECHA ── */}
-      <div className="flex-1 relative h-full flex flex-col items-center justify-center min-w-0">
+      <div className="flex-1 relative lg:h-full flex flex-col items-center justify-center min-w-0 min-h-[500px] lg:min-h-0">
         <AnimatePresence>
           {!selectedId ? (
 
@@ -317,13 +317,12 @@ export function BentoLayout() {
             <motion.div
               id="tour-grid"
               key="grid-view"
-              className="absolute flex items-center justify-center"
+              className="relative lg:absolute flex items-center justify-center w-full lg:h-full lg:max-w-[min(85vh,85vw)] lg:max-h-[min(85vh,85vw)] mt-4 lg:mt-0"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, transition: { duration: 0.15 } }}
-              style={{ width: 'min(85vh, 85vw)', height: 'min(85vh, 85vw)' }}
             >
-              <div className="grid grid-cols-3 auto-rows-fr gap-5 w-full h-full overflow-y-auto no-scrollbar p-6 -m-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 auto-rows-[110px] lg:auto-rows-fr gap-3 lg:gap-5 w-full h-full overflow-visible lg:overflow-y-auto no-scrollbar p-2 lg:p-6 lg:-m-6">
                 {gridSections.map((section) => {
                   const Icon = section.icon;
                   const theme = themeStyles[section.theme];
@@ -352,10 +351,10 @@ export function BentoLayout() {
                       whileTap={{ scale: 0.98 }}
                     >
                       <motion.div layoutId={`icon-${section.id}`} className={`text-slate-400 transition-colors duration-200 ${theme.text}`}>
-                        <Icon size={32} strokeWidth={1.5} />
+                        <Icon className="w-7 h-7 lg:w-8 lg:h-8" strokeWidth={1.5} />
                       </motion.div>
 
-                      <motion.span layoutId={`title-${section.id}`} className={`text-sm font-semibold text-slate-500 transition-colors duration-200 ${theme.text}`}>
+                      <motion.span layoutId={`title-${section.id}`} className={`text-xs lg:text-sm font-semibold text-slate-500 transition-colors duration-200 text-center px-2 ${theme.text}`}>
                         {section.title}
                       </motion.span>
                     </motion.button>
