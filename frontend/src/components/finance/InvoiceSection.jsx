@@ -138,10 +138,12 @@ const StandardTemplate = ({ data, subtotal, taxAmount, total }) => (
             {data.dateSubtext && <Text style={{ fontSize: 8, color: '#6b7280', textAlign: 'right', marginTop: 2, width: 80 }}>{data.dateSubtext}</Text>}
           </View>
         </View>
-        <View style={stdStyles.invoiceMeta}>
-          <Text style={stdStyles.metaLabel}>DUE DATE:</Text>
-          <Text style={stdStyles.metaValue}>{data.dueDate || '---'}</Text>
-        </View>
+        {data.dueDate ? (
+          <View style={stdStyles.invoiceMeta}>
+            <Text style={stdStyles.metaLabel}>DUE DATE:</Text>
+            <Text style={stdStyles.metaValue}>{data.dueDate}</Text>
+          </View>
+        ) : null}
       </View>
     </View>
 
@@ -150,6 +152,12 @@ const StandardTemplate = ({ data, subtotal, taxAmount, total }) => (
       <Text style={stdStyles.clientName}>{data.clientName || 'Client Name'}</Text>
       <Text style={stdStyles.clientDetails}>{data.clientAddress}</Text>
       <Text style={stdStyles.clientDetails}>{data.clientEmail}</Text>
+      {data.signOffText && (
+        <View style={{ marginTop: 10 }}>
+          <Text style={{ fontSize: 10, color: '#111827', fontWeight: 'bold' }}>Attn:</Text>
+          <Text style={{ fontSize: 10, color: '#111827', marginTop: 2 }}>{data.signOffText}</Text>
+        </View>
+      )}
     </View>
 
     <View style={stdStyles.table}>
@@ -168,13 +176,6 @@ const StandardTemplate = ({ data, subtotal, taxAmount, total }) => (
         </View>
       ))}
     </View>
-
-    {data.signOffText && (
-      <View style={{ marginTop: 20 }}>
-        <Text style={{ fontSize: 10, color: '#111827', fontWeight: 'bold' }}>Atte.</Text>
-        <Text style={{ fontSize: 10, color: '#111827', marginTop: 4 }}>{data.signOffText}</Text>
-      </View>
-    )}
 
     <View style={stdStyles.totalsSection}>
       <View style={stdStyles.totalsBlock}>
@@ -230,6 +231,12 @@ const InfiniguardTemplate = ({ data, subtotal, taxAmount, total }) => {
           <Text style={infStyles.billToLabel}>Bill To</Text>
           <Text style={infStyles.clientName}>{data.clientName || 'Client Name'}</Text>
           <Text style={infStyles.clientDetails}>{data.clientAddress}</Text>
+          {data.signOffText && (
+            <View style={{ marginTop: 10 }}>
+              <Text style={{ fontSize: 10, color: '#111', fontWeight: 'bold' }}>Attn:</Text>
+              <Text style={{ fontSize: 9, color: '#333', marginTop: 2 }}>{data.signOffText}</Text>
+            </View>
+          )}
         </View>
 
         {data.shipToName && (
@@ -254,10 +261,12 @@ const InfiniguardTemplate = ({ data, subtotal, taxAmount, total }) => {
               <Text style={infStyles.metaValue}>{data.terms}</Text>
             </View>
           )}
-          <View style={infStyles.metaRow}>
-            <Text style={infStyles.metaLabel}>Due Date :</Text>
-            <Text style={infStyles.metaValue}>{data.dueDate || '---'}</Text>
-          </View>
+          {data.dueDate ? (
+            <View style={infStyles.metaRow}>
+              <Text style={infStyles.metaLabel}>Due Date :</Text>
+              <Text style={infStyles.metaValue}>{data.dueDate}</Text>
+            </View>
+          ) : null}
           {data.poNumber && (
             <View style={infStyles.metaRow}>
               <Text style={infStyles.metaLabel}>Reference P.O.# :</Text>
@@ -288,13 +297,6 @@ const InfiniguardTemplate = ({ data, subtotal, taxAmount, total }) => {
           </View>
         ))}
       </View>
-
-      {data.signOffText && (
-        <View style={{ marginTop: 20 }}>
-          <Text style={{ fontSize: 9, color: '#111', fontWeight: 'bold' }}>Atte.</Text>
-          <Text style={{ fontSize: 9, color: '#333', marginTop: 4 }}>{data.signOffText}</Text>
-        </View>
-      )}
 
       <View style={infStyles.totalsSection}>
         <View style={infStyles.totalsBlock}>
@@ -711,7 +713,7 @@ export function InvoiceSection({ title }) {
                     <InputField label="Invoice #" value={invoiceData.invoiceNumber} onChange={(e) => handleInputChange('invoiceNumber', e.target.value)} />
                     <InputField label="Date" type="date" value={invoiceData.date} onChange={(e) => handleInputChange('date', e.target.value)} />
                     <InputField label="Date Subtext (Optional)" value={invoiceData.dateSubtext} onChange={(e) => handleInputChange('dateSubtext', e.target.value)} placeholder="e.g. valid for 30 days" />
-                    <InputField label="Due Date" type="date" value={invoiceData.dueDate} onChange={(e) => handleInputChange('dueDate', e.target.value)} />
+                    <InputField label="Due Date (Optional)" type="date" value={invoiceData.dueDate} onChange={(e) => handleInputChange('dueDate', e.target.value)} />
                     {invoiceData.template === 'infiniguard' && (
                       <InputField label="Terms" value={invoiceData.terms} onChange={(e) => handleInputChange('terms', e.target.value)} placeholder="e.g. Net 60 days" />
                     )}
@@ -868,7 +870,7 @@ export function InvoiceSection({ title }) {
                       </label>
                     </div>
                   </div>
-                  <InputField label="Sign-off (Atte.)" value={invoiceData.signOffText} onChange={(e) => handleInputChange('signOffText', e.target.value)} placeholder="Name / Title for signature..." />
+                  <InputField label="Attn (Optional)" value={invoiceData.signOffText} onChange={(e) => handleInputChange('signOffText', e.target.value)} placeholder="Attention to..." />
                   
                   <InputField label="Additional Notes" value={invoiceData.notes} onChange={(e) => handleInputChange('notes', e.target.value)} multiline rows={3} placeholder="Payment instructions..." />
 
