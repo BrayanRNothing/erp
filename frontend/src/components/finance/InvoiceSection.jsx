@@ -133,7 +133,10 @@ const StandardTemplate = ({ data, subtotal, taxAmount, total }) => (
         </View>
         <View style={stdStyles.invoiceMeta}>
           <Text style={stdStyles.metaLabel}>DATE:</Text>
-          <Text style={stdStyles.metaValue}>{data.date || '---'}</Text>
+          <View style={{ flexDirection: 'column' }}>
+            <Text style={stdStyles.metaValue}>{data.date || '---'}</Text>
+            {data.dateSubtext && <Text style={{ fontSize: 8, color: '#6b7280', textAlign: 'right', marginTop: 2, width: 80 }}>{data.dateSubtext}</Text>}
+          </View>
         </View>
         <View style={stdStyles.invoiceMeta}>
           <Text style={stdStyles.metaLabel}>DUE DATE:</Text>
@@ -165,6 +168,13 @@ const StandardTemplate = ({ data, subtotal, taxAmount, total }) => (
         </View>
       ))}
     </View>
+
+    {data.signOffText && (
+      <View style={{ marginTop: 20 }}>
+        <Text style={{ fontSize: 10, color: '#111827', fontWeight: 'bold' }}>Atte.</Text>
+        <Text style={{ fontSize: 10, color: '#111827', marginTop: 4 }}>{data.signOffText}</Text>
+      </View>
+    )}
 
     <View style={stdStyles.totalsSection}>
       <View style={stdStyles.totalsBlock}>
@@ -233,7 +243,10 @@ const InfiniguardTemplate = ({ data, subtotal, taxAmount, total }) => {
         <View style={infStyles.metaBlock}>
           <View style={infStyles.metaRow}>
             <Text style={infStyles.metaLabel}>Invoice Date :</Text>
-            <Text style={infStyles.metaValue}>{data.date || '---'}</Text>
+            <View style={{ flexDirection: 'column' }}>
+              <Text style={infStyles.metaValue}>{data.date || '---'}</Text>
+              {data.dateSubtext && <Text style={{ fontSize: 8, color: '#333', textAlign: 'right', marginTop: 2, width: 80 }}>{data.dateSubtext}</Text>}
+            </View>
           </View>
           {data.terms && (
             <View style={infStyles.metaRow}>
@@ -275,6 +288,13 @@ const InfiniguardTemplate = ({ data, subtotal, taxAmount, total }) => {
           </View>
         ))}
       </View>
+
+      {data.signOffText && (
+        <View style={{ marginTop: 20 }}>
+          <Text style={{ fontSize: 9, color: '#111', fontWeight: 'bold' }}>Atte.</Text>
+          <Text style={{ fontSize: 9, color: '#333', marginTop: 4 }}>{data.signOffText}</Text>
+        </View>
+      )}
 
       <View style={infStyles.totalsSection}>
         <View style={infStyles.totalsBlock}>
@@ -361,6 +381,7 @@ export function InvoiceSection({ title }) {
     companyTagline: '',
     invoiceNumber: '',
     date: new Date().toISOString().split('T')[0],
+    dateSubtext: '',
     dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     terms: '',
     poNumber: '',
@@ -373,6 +394,7 @@ export function InvoiceSection({ title }) {
     taxRate: 0,
     showTax: false,
     notes: '',
+    signOffText: '',
     bankDetails: '',
     items: [
       { description: '', quantity: 1, price: 0, unit: '' },
@@ -424,6 +446,7 @@ export function InvoiceSection({ title }) {
       companyTagline: '',
       invoiceNumber: '',
       date: new Date().toISOString().split('T')[0],
+      dateSubtext: '',
       dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       terms: '',
       poNumber: '',
@@ -436,6 +459,7 @@ export function InvoiceSection({ title }) {
       taxRate: 0,
       showTax: false,
       notes: '',
+      signOffText: '',
       bankDetails: '',
       items: [
         { description: '', quantity: 1, price: 0, unit: '' },
@@ -457,6 +481,7 @@ export function InvoiceSection({ title }) {
       terms: 'Net 60 days',
       bankDetails: '',
       notes: '',
+      signOffText: '',
       // Limpiar campos específicos de la factura para que la llenen desde cero
       invoiceNumber: '',
       poNumber: '',
@@ -488,6 +513,7 @@ export function InvoiceSection({ title }) {
       terms: 'Net 60',
       bankDetails: 'Bank: JPMorgan Chase\nABA/Routing #: 322271627\nAccount #: 591798668',
       notes: 'Thanks for your business.',
+      signOffText: '',
       // Clear invoice-specific fields so the user fills them from scratch
       invoiceNumber: '',
       poNumber: '',
@@ -684,6 +710,7 @@ export function InvoiceSection({ title }) {
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <InputField label="Invoice #" value={invoiceData.invoiceNumber} onChange={(e) => handleInputChange('invoiceNumber', e.target.value)} />
                     <InputField label="Date" type="date" value={invoiceData.date} onChange={(e) => handleInputChange('date', e.target.value)} />
+                    <InputField label="Date Subtext (Optional)" value={invoiceData.dateSubtext} onChange={(e) => handleInputChange('dateSubtext', e.target.value)} placeholder="e.g. valid for 30 days" />
                     <InputField label="Due Date" type="date" value={invoiceData.dueDate} onChange={(e) => handleInputChange('dueDate', e.target.value)} />
                     {invoiceData.template === 'infiniguard' && (
                       <InputField label="Terms" value={invoiceData.terms} onChange={(e) => handleInputChange('terms', e.target.value)} placeholder="e.g. Net 60 days" />
@@ -841,6 +868,8 @@ export function InvoiceSection({ title }) {
                       </label>
                     </div>
                   </div>
+                  <InputField label="Sign-off (Atte.)" value={invoiceData.signOffText} onChange={(e) => handleInputChange('signOffText', e.target.value)} placeholder="Name / Title for signature..." />
+                  
                   <InputField label="Additional Notes" value={invoiceData.notes} onChange={(e) => handleInputChange('notes', e.target.value)} multiline rows={3} placeholder="Payment instructions..." />
 
                   {invoiceData.template === 'infiniguard' && (
